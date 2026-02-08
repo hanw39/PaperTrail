@@ -1,0 +1,18 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(pip install:*)",
+      "Bash(git fetch:*)",
+      "WebFetch(domain:neon.com)",
+      "WebSearch",
+      "WebFetch(domain:www.iweaver.ai)",
+      "WebFetch(domain:mikhail.io)",
+      "WebFetch(domain:laurentkempe.com)",
+      "WebFetch(domain:martinemde.com)",
+      "Bash(powershell:*)",
+      "WebFetch(domain:dgrigg.com)",
+      "WebFetch(domain:www.builder.io)",
+      "Bash(if not exist \"C:\\\\Users\\\\wanghan001\\\\work\\\\code\\\\my-code\\\\PaperTrail\\\\.claude\\\\skills\" mkdir \"C:\\\\Users\\\\wanghan001\\\\work\\\\code\\\\my-code\\\\PaperTrail\\\\.claude\\\\skills\")"
+    ]
+  }
+}
