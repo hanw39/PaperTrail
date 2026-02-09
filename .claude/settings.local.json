@@ -12,7 +12,8 @@
       "Bash(powershell:*)",
       "WebFetch(domain:dgrigg.com)",
       "WebFetch(domain:www.builder.io)",
-      "Bash(if not exist \"C:\\\\Users\\\\wanghan001\\\\work\\\\code\\\\my-code\\\\PaperTrail\\\\.claude\\\\skills\" mkdir \"C:\\\\Users\\\\wanghan001\\\\work\\\\code\\\\my-code\\\\PaperTrail\\\\.claude\\\\skills\")"
+      "Bash(if not exist \"C:\\\\Users\\\\wanghan001\\\\work\\\\code\\\\my-code\\\\PaperTrail\\\\.claude\\\\skills\" mkdir \"C:\\\\Users\\\\wanghan001\\\\work\\\\code\\\\my-code\\\\PaperTrail\\\\.claude\\\\skills\")",
+      "Bash(python:*)"
     ]
   }
 }
