@@ -26,15 +26,15 @@ license: Apache-2.0
    - **文件不存在**：立即告知用户路径错误，要求重新提供有效的 PDF 文件路径，不继续后续步骤
 
    **使用 Docling 解析 PDF（缓存优先策略）**：
-   - 缓存文件路径：`{PDF路径}.parsed.md`
-   - 若缓存存在且新于 PDF，直接使用缓存，跳到步骤 2
-   - 否则调用 `python scripts/pdf_parser.py "{PDF路径}" "{缓存路径}"` 解析
+   - 缓存目录路径：`{PDF路径}.sections/`
+   - 若缓存目录存在且 `_index.md` 新于 PDF，直接使用缓存，跳到步骤 2
+   - 否则调用 `python scripts/pdf_parser.py "{PDF路径}" "{sections目录}"` 解析并拆分章节
    - 解析失败时告知用户检查 PDF 完整性和 Docling 安装（`pip install docling`），不继续后续步骤
-   - 缓存损坏时删除缓存文件重新解析
+   - 缓存损坏时删除缓存目录重新解析
 
 2. **从解析结果提取元数据**：
-   - 使用 Read 工具读取缓存文件（`{缓存路径}`）的前 50 行
-   - 从 Markdown 内容中提取论文标题（通常在前几行的 `##` 标题中）
+   - 使用 Read 工具读取 `{sections目录}/_index.md` 获取章节结构
+   - 使用 Read 工具读取 `{sections目录}/00-title-abstract.md` 提取论文标题
    - 从 PDF 文件名提取 arXiv 编号（如 `2602.02660v1`）
    - 从 arXiv 编号提取年份（如 `2602` → `2026`）
    - 生成论文标题缩写（取标题前 1-2 个关键词，如 "MARS"）
@@ -42,22 +42,20 @@ license: Apache-2.0
    - 示例：`papers/2026/MARS-2602.02660v1/`
 
 3. **移动文件到分类目录**：
-   - 将 PDF 和缓存文件移动到目标文件夹
+   - 将 PDF 和整个 `sections/` 目录移动到目标文件夹
    - 更新后续所有路径引用为新位置
-   - 若移动失败（如文件已存在），使用 `cp` 复制而非移动，并在完成提示中说明
+   - 若移动失败（如文件已存在），使用 `cp -r` 复制而非移动，并在完成提示中说明
 
 4. **派生笔记文件路径**：
    - `reading-notes.md`：存放 Phase 0-3 的阅读笔记
    - `research-insights.md`：存放 Phase 4 的研究者总结
    - 两个文件均位于论文文件夹内
 
-5. **估算内容长度**：使用 Bash 工具统计缓存文件行数：`wc -l "{缓存路径}"`，用于后续阶段规划读取范围。
-
 初始化完成后，立即进入 Phase 0。
 
 ## Phase 0：阅读视角
 
-**读取范围**：使用 Read 工具读取解析后的 Markdown 文件（`{缓存路径}`），覆盖 Title、Abstract、Introduction 和 Conclusion 部分。
+**读取范围**：使用 Read 工具读取 `{sections目录}/_index.md` 获取章节列表，然后读取 `00-title-abstract.md`，以及从 `_index.md` 中匹配 heading 包含 `introduction` 和 `conclusion` 的 section 文件。
 
 **分析任务**：基于标题、摘要、引言和结论，推断：
 - 该论文的核心研究目标是什么
@@ -85,7 +83,7 @@ license: Apache-2.0
 
 ## Phase 2：方法与结构拆解
 
-**读取范围**：使用 Read 工具读取解析后的 Markdown 文件的 Methodology 和 Results/Experiments 章节。根据 Markdown 的章节标题（`##` 开头）定位相应内容，使用 `offset` 和 `limit` 参数读取。
+**读取范围**：从 `{sections目录}/_index.md` 中匹配 heading 包含 `method`/`methodology`/`approach` 和 `result`/`experiment`/`evaluation` 的 section 文件并读取。
 
 **分析任务**：对论文进行结构化拆解：
 1. **问题→方法→证据→结论**：完整梳理论文的逻辑链条
@@ -98,7 +96,7 @@ license: Apache-2.0
 
 ## Phase 3：论证可靠性评估
 
-**读取范围**：使用 Read 工具读取解析后的 Markdown 文件的 Discussion 章节和核心论证段落。根据 Phase 2 中已了解的论文结构定位相应内容。
+**读取范围**：从 `{sections目录}/_index.md` 中匹配 heading 包含 `discussion` 的 section 文件并读取。根据 Phase 2 中已了解的论文结构，必要时读取其他核心论证相关的 section 文件。
 
 **分析任务**：使用 Toulmin 论证模型对论文的每个核心主张进行系统性评估：
 
@@ -180,7 +178,7 @@ license: Apache-2.0
 ### 内容聚焦
 
 - 聚焦核心观点，省略详细实验数据表格和冗余细节，仅保留对理解论文贡献有价值的关键数据。
-- 所有阶段读取论文内容时，跳过 References 部分。
+- 分析阶段不读取 references section 文件，但该文件保留在 sections/ 目录中供查阅。
 - 笔记内部采用自由格式，根据论文特点自适应组织内容结构，不强制固定章节模板。
 
 ### 意图配置文件管理
