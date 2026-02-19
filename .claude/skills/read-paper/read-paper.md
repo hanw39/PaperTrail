@@ -1,6 +1,6 @@
 ---
 name: read-paper
-description: "研究型论文阅读助手：以五阶段渐进式流程分析学术论文 PDF"
+description: "研究型论文阅读助手：以五阶段渐进式流程分析 arXiv 学术论文"
 license: Apache-2.0
 ---
 
@@ -18,35 +18,34 @@ license: Apache-2.0
 
 ## 输入处理与初始化
 
-用户通过 `/read-paper <PDF路径>` 调用本 Skill。收到调用后，按以下步骤初始化：
+用户通过 `/read-paper <arXiv_ID>` 调用本 Skill。收到调用后，按以下步骤初始化：
 
-1. **解析 PDF 路径并预处理**：
-   - 从 `$ARGUMENTS` 提取 PDF 文件路径
-   - 使用 Bash 工具检查 PDF 文件是否存在：`test -f "{PDF路径}" && echo "exists" || echo "not found"`
-   - **文件不存在**：立即告知用户路径错误，要求重新提供有效的 PDF 文件路径，不继续后续步骤
+1. **解析 arXiv ID 并预处理**：
+   - 从 `$ARGUMENTS` 提取 arXiv ID（匹配模式：`\d{4}\.\d{5}(v\d+)?`）
+   - **格式无效**：告知用户提供有效的 arXiv ID（如 `2602.02660` 或 `2602.02660v1`），不继续后续步骤
 
-   **使用 Docling 解析 PDF（缓存优先策略）**：
-   - 缓存目录路径：`{PDF路径}.sections/`
-   - 若缓存目录存在且 `_index.md` 新于 PDF，直接使用缓存，跳到步骤 2
-   - 否则调用 `python scripts/pdf_parser.py "{PDF路径}" "{sections目录}"` 解析并拆分章节
-   - 解析失败时告知用户检查 PDF 完整性和 Docling 安装（`pip install docling`），不继续后续步骤
+   **使用 LaTeX 解析**：
+   - 首先使用 Glob 工具搜索 `papers/**/{arXiv_ID}_sections/_index.md` 检查是否已有缓存
+   - 若缓存存在，直接使用缓存，跳到步骤 3
+   - 若无缓存，先解析到临时目录 `papers/unread/{arXiv_ID}_sections/`
+   - 调用 `python scripts/latex_parser.py "{arXiv_ID}" "papers/unread/{arXiv_ID}_sections"` 下载源码并解析拆分章节
+   - **解析失败**：告知用户可能的原因（arXiv 无 LaTeX 源码、Pandoc 未安装、网络问题），建议：
+     - 检查 Pandoc 安装：`pip install pypandoc && python -c 'import pypandoc; pypandoc.download_pandoc()'`
+     - 检查网络连接
+     - 确认该论文在 arXiv 上提供了 LaTeX 源码
    - 缓存损坏时删除缓存目录重新解析
 
-2. **从解析结果提取元数据**：
-   - 使用 Read 工具读取 `{sections目录}/_index.md` 获取章节结构
-   - 使用 Read 工具读取 `{sections目录}/00-title-abstract.md` 提取论文标题
-   - 从 PDF 文件名提取 arXiv 编号（如 `2602.02660v1`）
-   - 从 arXiv 编号提取年份（如 `2602` → `2026`）
+2. **从解析结果提取元数据并归档**：
+   - 使用 Read 工具读取 `{临时sections目录}/_index.md` 获取章节结构
+   - 读取第一个 section 文件提取论文标题
+   - 从 arXiv ID 提取年份（如 `2602` → `2026`）
    - 生成论文标题缩写（取标题前 1-2 个关键词，如 "MARS"）
-   - 创建文件夹：`papers/{年份}/{论文标题缩写}-{arXiv编号}/`
-   - 示例：`papers/2026/MARS-2602.02660v1/`
+   - 创建论文文件夹：`papers/{年份}/{论文标题缩写}-{arXiv_ID}/`
+   - 将 sections 目录移动到论文文件夹下：`papers/{年份}/{论文标题缩写}-{arXiv_ID}/{arXiv_ID}_sections/`
+   - 若移动失败（如文件已存在），使用 `cp -r` 复制而非移动
+   - 示例最终路径：`papers/2026/MARS-2602.02660v1/2602.02660v1_sections/`
 
-3. **移动文件到分类目录**：
-   - 将 PDF 和整个 `sections/` 目录移动到目标文件夹
-   - 更新后续所有路径引用为新位置
-   - 若移动失败（如文件已存在），使用 `cp -r` 复制而非移动，并在完成提示中说明
-
-4. **派生笔记文件路径**：
+3. **派生笔记文件路径**：
    - `reading-notes.md`：存放 Phase 0-3 的阅读笔记
    - `research-insights.md`：存放 Phase 4 的研究者总结
    - 两个文件均位于论文文件夹内
@@ -55,7 +54,7 @@ license: Apache-2.0
 
 ## Phase 0：阅读视角
 
-**读取范围**：使用 Read 工具读取 `{sections目录}/_index.md` 获取章节列表，然后读取 `00-title-abstract.md`，以及从 `_index.md` 中匹配 heading 包含 `introduction` 和 `conclusion` 的 section 文件。
+**读取范围**：使用 Read 工具读取 `{sections目录}/_index.md` 获取章节列表，然后读取第一个 section 文件（通常包含标题和摘要/引言），以及从 `_index.md` 中匹配 heading 包含 `introduction` 和 `conclusion` 的 section 文件。
 
 **分析任务**：基于标题、摘要、引言和结论，推断：
 - 该论文的核心研究目标是什么
@@ -130,7 +129,7 @@ license: Apache-2.0
    - 是否值得复现其实验或方法？复现的关键挑战是什么？
    - 是否值得基于此论文开展进一步研究？具体方向是什么？
 
-**完成提示**：输出"阅读完成。笔记已保存至：\n- 阅读笔记：`<reading-notes.md路径>`\n- 研究总结：`<research-insights.md路径>`\n- PDF 文件：`<PDF最终路径>`"，其中路径替换为实际的文件路径。不再询问是否继续，阅读流程到此结束。
+**完成提示**：输出"阅读完成。笔记已保存至：\n- 阅读笔记：`<reading-notes.md路径>`\n- 研究总结：`<research-insights.md路径>`"，其中路径替换为实际的文件路径。不再询问是否继续，阅读流程到此结束。
 
 ## 跨阶段规则
 

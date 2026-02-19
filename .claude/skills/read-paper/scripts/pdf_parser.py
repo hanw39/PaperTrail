@@ -67,20 +67,33 @@ def _is_main_section(text: str, is_first: bool = False) -> bool:
     # 第一个 header 通常是论文标题
     if is_first:
         return True
-    # 带点编号 → 子章节 (3.1, A.2, A.2.1, 1.)
-    if re.match(r'^[\dA-Z]+\.', t):
+
+    # 子章节：多级编号 (4.1, 4.4.1, A.2, E.1.2)
+    if re.match(r'^\d+\.\d+', t) or re.match(r'^[A-Z]\.\d+', t):
         return False
-    # 数字编号主章节 (1 Introduction, 2 Related Work)
+
+    # 主章节：单级数字编号 + 点 + 空格 (1. Introduction, 2. Method)
+    if re.match(r'^\d+\.\s', t):
+        return True
+
+    # 主章节：单级字母编号 + 点 + 空格 (A. Appendix, B. Dataset)
+    if re.match(r'^[A-Z]\.\s', t):
+        return True
+
+    # 主章节：数字编号 + 空格（无点）(1 Introduction, 2 Related Work)
     if re.match(r'^\d+\s', t):
         return True
-    # 字母编号主章节 (A Experiment, B Dataset)
+
+    # 主章节：字母编号 + 空格（无点）(A Experiment, B Dataset)
     if re.match(r'^[A-Z]\s', t):
         return True
+
     # 无编号特殊章节 (Abstract, References, Acknowledgments)
     special = {'abstract', 'references', 'acknowledgments', 'acknowledgements',
-               'conclusion', 'appendix', 'bibliography'}
+               'conclusion', 'appendix', 'bibliography', 'impact statement'}
     if t.lower() in special:
         return True
+
     return False
 
 
@@ -133,15 +146,21 @@ def split_to_sections(doc_result, output_dir: str) -> None:
                 sections.append(("Title & Abstract", preamble_md, 0))
 
         # 按主标题拆分
+        # 策略：每个主章节包含到下一个主章节之前的所有内容（包括子章节）
         for i, (start_idx, header) in enumerate(main):
+            # 找到下一个主章节的位置
             if i + 1 < len(main):
-                end_idx = main[i + 1][0] - 1
+                next_main_idx = main[i + 1][0]
+                # 导出从当前主章节到下一个主章节之前的所有内容
+                end_idx = next_main_idx - 1
             else:
+                # 最后一个主章节，导出到文档末尾
                 end_idx = item_count - 1
 
             md = doc.export_to_markdown(
                 from_element=start_idx, to_element=end_idx
             ).strip()
+
             sections.append((header.text, md, header.level))
 
     # 写入 section 文件并构建索引

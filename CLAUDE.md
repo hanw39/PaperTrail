@@ -16,7 +16,7 @@ Auto-generated from all feature plans. Last updated: 2026-02-08
 
 ## Commands
 
-- `/read-paper <PDF路径>` — 启动论文阅读分析流程（五阶段：视角→筛选→方法→论证→总结），笔记自动保存为 PDF 同名 `.md` 文件
+- `/read-paper <arXiv_ID>` — 启动论文阅读分析流程（五阶段：视角→筛选→方法→论证→总结），自动从 arXiv 下载 LaTeX 源码解析
 
 ## Code Style
 

@@ -4,21 +4,53 @@
 
 ## 📁 文件说明
 
-### `pdf_parser.py`
-使用 Docling 解析 PDF 文件为 Markdown 格式的 Python 脚本。
+### `latex_parser.py` ⭐ 新增
+
+从 arXiv 下载 LaTeX 源码并转换为 Markdown，按一级标题切分。
+
+**依赖**：
+```bash
+# 安装 Pandoc
+# Windows: choco install pandoc
+# macOS: brew install pandoc
+# Linux: sudo apt-get install pandoc
+```
 
 **用法**：
 ```bash
-python .claude/skills/read-paper/pdf_parser.py <PDF路径> [输出路径]
+python latex_parser.py <arXiv_ID> <输出目录>
 ```
 
 **示例**：
 ```bash
-# 输出到终端
-python .claude/skills/read-paper/pdf_parser.py paper.pdf
+# 解析 arXiv 论文 2602.02660
+python latex_parser.py 2602.02660 papers/unread/2602.02660v1_sections_latex
+```
 
-# 保存到文件
-python .claude/skills/read-paper/pdf_parser.py paper.pdf paper.md
+**特性**：
+- ✅ 速度快（无需 OCR）
+- ✅ 质量高（LaTeX 是源格式）
+- ✅ 公式准确（保留 LaTeX 数学公式）
+- ✅ 表格可靠（LaTeX 表格转换准确）
+- ✅ 自动下载 arXiv 源码
+- ✅ 按一级标题切分章节
+
+**限制**：
+- 仅支持 arXiv 论文
+- 需要论文提供 LaTeX 源码
+
+### `pdf_parser.py`
+
+使用 Docling 解析 PDF 文件为 Markdown 格式的 Python 脚本。
+
+**用法**：
+```bash
+python .claude/skills/read-paper/pdf_parser.py <PDF路径> <sections目录路径>
+```
+
+**示例**：
+```bash
+python pdf_parser.py papers/unread/2602.02660v1.pdf papers/unread/2602.02660v1_sections
 ```
 
 **特性**：
@@ -26,6 +58,27 @@ python .claude/skills/read-paper/pdf_parser.py paper.pdf paper.md
 - ✅ 保留表格、代码块、公式等结构
 - ✅ 输出标准 Markdown 格式
 - ✅ 自动处理 Windows 编码问题
+- ✅ 按主章节切分
+
+**限制**：
+- 速度较慢（需要 OCR）
+- 可能有识别错误
+
+## 🎯 推荐使用策略
+
+1. **arXiv 论文**：优先使用 `latex_parser.py`（更快更准确）
+2. **其他 PDF**：使用 `pdf_parser.py`
+3. **arXiv 无源码**：回退到 `pdf_parser.py`
+
+## 📊 性能对比
+
+| 特性 | latex_parser.py | pdf_parser.py |
+|------|----------------|---------------|
+| 速度 | ⚡ 快（~10秒） | 🐌 慢（~2分钟） |
+| 质量 | ⭐⭐⭐⭐⭐ | ⭐⭐⭐⭐ |
+| 公式 | ✅ 完美 | ⚠️ 一般 |
+| 表格 | ✅ 完美 | ⚠️ 一般 |
+| 适用范围 | arXiv 论文 | 所有 PDF |
 
 ### `DOCLING_SETUP.md`
 Docling 安装和使用指南。
